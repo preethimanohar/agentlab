@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# uv
+uv.lock
+
+# Data: keep raw snapshots out of git (tracked by manifest hash instead)
+data/raw/*
+!data/raw/.gitkeep
+data/generated/*
+!data/generated/.gitkeep
+data/documents/*
+!data/documents/.gitkeep
+
+# Reports / eval outputs (regenerable)
+reports/*
+!reports/.gitkeep
+
+# Local model-response cache (record/replay)
+.cache/
+
+# Secrets
+.env

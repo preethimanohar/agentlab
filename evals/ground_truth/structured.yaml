@@ -1,0 +1,106 @@
+snapshot_hash: 09d36d873914104b
+snapshot_date: '2026-08-31'
+example_camis: '30075445'
+example_dba: MORRIS PARK BAKE SHOP
+verified_by_human: false
+questions:
+- id: dl_01
+  category: direct_lookup
+  text: What was the score of the most recent scored inspection for the restaurant with CAMIS 30075445?
+  answer_type: number
+  truth: sql
+  difficulty: clean
+  ground_truth: 7
+- id: dl_02
+  category: direct_lookup
+  text: What letter grade did CAMIS 30075445 receive at its most recent graded (A/B/C) inspection?
+  answer_type: string
+  truth: sql
+  difficulty: clean
+  ground_truth: A
+- id: ag_01
+  category: aggregation
+  text: Among NYC neighborhoods (NTA) with at least 30 restaurants that currently have a score, which
+    NTA has the highest average latest-inspection score?
+  answer_type: string
+  truth: sql
+  difficulty: clean
+  ground_truth: QN62
+- id: ag_02
+  category: aggregation
+  text: How many distinct restaurants have at least one critical violation on their most recent scored
+    inspection?
+  answer_type: number
+  truth: sql
+  difficulty: clean
+  ground_truth: 23350
+- id: ag_03
+  category: aggregation
+  text: What is the single most frequently cited violation_code across all inspections in the snapshot?
+  answer_type: string
+  truth: sql
+  difficulty: clean
+  ground_truth: 10F
+- id: tp_01
+  category: temporal
+  text: How many restaurants scored worse (a higher score) on their most recent scored inspection than
+    on the one immediately before it?
+  answer_type: number
+  truth: sql
+  difficulty: clean
+  ground_truth: 8935
+- id: tp_02
+  category: temporal
+  text: For CAMIS 30075445, did its inspection score improve or deteriorate between its last two scored
+    inspections?
+  answer_type: string
+  truth: sql
+  difficulty: clean
+  ground_truth: improved
+- id: id_01
+  category: identity
+  text: How many inspection events (excluding never-inspected placeholder records) has CAMIS 30075445
+    had?
+  answer_type: number
+  truth: sql
+  difficulty: clean
+  ground_truth: 4
+- id: id_02a
+  category: identity
+  text: How many distinct restaurant establishments have the normalized name exactly 'DUNKIN'?
+  answer_type: number
+  truth: sql
+  difficulty: clean
+  ground_truth: 450
+- id: id_02b
+  category: identity
+  text: How many Dunkin-brand locations are in the dataset?
+  answer_type: string
+  truth: manual
+  difficulty: hard
+  ground_truth: null
+- id: sm_01
+  category: semantic
+  text: Which restaurant (by name) improved the most between its last two scored inspections?
+  answer_type: set
+  truth: sql
+  difficulty: clean
+  ground_truth:
+  - 'KING SUNSHINE #2 JERK CENTER'
+- id: sm_02
+  category: semantic
+  text: Is a restaurant with an inspection score of 8 in better or worse standing than one with a score
+    of 28?
+  answer_type: string
+  truth: fixed
+  difficulty: clean
+  ground_truth: better
+- id: pv_01
+  category: provenance
+  text: Which source record id(s) back the most recent scored inspection for CAMIS 30075445?
+  answer_type: set
+  truth: sql
+  difficulty: clean
+  ground_truth:
+  - 09d36d873914104b:000009
+  - 09d36d873914104b:000010

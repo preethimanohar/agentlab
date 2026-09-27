@@ -1,0 +1,96 @@
+# Semantic layer — machine-consumed by agents (not just documentation).
+# Loaded by semantic/loader.py and injected into agent context / tool responses.
+# If a value here changes, agent behaviour must observably change.
+
+version: 1
+
+entities:
+  restaurant:
+    description: A single food-service establishment.
+    canonical_key: camis           # stable id provided by the source
+    display_field: canonical_name
+    natural_keys: [dba, building, street, zipcode]
+
+  inspection:
+    description: One inspection event for a restaurant on a date.
+    canonical_key: inspection_id    # synthesized: hash(camis, inspection_date, inspection_type)
+    grain: [camis, inspection_date, inspection_type]
+    parent: restaurant
+
+  violation:
+    description: One cited violation within an inspection.
+    grain: [inspection_id, violation_code]
+    parent: inspection
+
+metrics:
+  inspection_score:
+    description: Violation points assigned during an inspection. Fewer points = cleaner.
+    directionality: lower_is_better   # <-- the fact a naive agent gets wrong
+    grain: inspection
+    nullable: true
+    valid_range: [0, 250]
+    notes: >
+      0 is valid and is the best possible score. Negative values do not occur.
+      Null/absent (~6% of rows) = the inspection was not scored (some
+      administrative / re-opening / never-inspected records). Observed max 214.
+    grade_bands: {A: "0-13", B: "14-27", C: "28+"}
+
+  inspection_grade:
+    description: Letter grade posted for an inspection.
+    grain: inspection
+    nullable: true
+    final_values: [A, B, C]          # a "graded" inspection has one of these
+    pending_values: [N, Z, P]        # not yet graded / grade pending / re-inspection pending
+    notes: ~51% of rows have no grade (re-inspections and non-cycle types often ungraded).
+
+  latest_inspection:
+    description: The most recent scored inspection per restaurant.
+    entity: restaurant
+    filter: "is_scored AND inspection_date > DATE '1901-01-01'"
+    ordering: "inspection_date DESC, is_graded DESC, score ASC"   # deterministic tie-break
+    tie_break_note: >
+      Multiple inspection types can share a date; prefer the graded one, then the
+      lower score. Documented so the value is reproducible.
+
+  latest_graded_inspection:
+    description: The most recent inspection with a final letter grade (A/B/C).
+    entity: restaurant
+    filter: "grade IN ('A','B','C')"
+    ordering: "inspection_date DESC"
+
+  score_change:
+    description: latest_inspection.score minus previous_inspection.score for a restaurant.
+    directionality: lower_is_better
+    improved_means: score_change < 0
+    deteriorated_means: score_change > 0
+
+  restaurant_count:
+    description: Count of DISTINCT canonical restaurant entities (by camis), not rows.
+
+  neighborhood:
+    description: Geographic grouping used for aggregation.
+    source_field: nta               # Neighborhood Tabulation Area code
+    fallback_field: boro            # used only when nta is null
+    aggregation_rule: >
+      For "which neighborhood" questions, use nta only (exclude nulls) and
+      require >= 30 restaurants with a latest score, so small-sample NTAs and the
+      borough fallback bucket do not distort the ranking.
+
+# Curated views in canonical.duckdb that already encode the definitions above.
+# A semantic-aware agent should prefer these over re-deriving from base tables.
+views:
+  restaurant_latest_inspection: One row per restaurant = its latest scored inspection (applies the latest_inspection rule).
+  restaurant_latest_graded_inspection: One row per restaurant = its latest A/B/C inspection.
+  restaurant_scored_history: All scored inspections, with n_recent (1 = most recent) and scored_count per restaurant.
+  restaurant_score_change: Per restaurant, latest vs previous scored inspection, with score_change and direction (improved/deteriorated/unchanged).
+  restaurant_violation_history: Every violation with its restaurant and inspection_date.
+  neighborhood_inspection_summary: Per neighborhood (nta or boro fallback), restaurant counts, avg_latest_score, pct_grade_a.
+
+freshness:
+  inspections:
+    current_state_definition: latest_inspection
+    stale_if: "max(inspection_date) is older than the pinned snapshot_date by > 24h at publish time"
+
+provenance:
+  required_fields: [source_record_id, source_system, snapshot_hash]
+  source_system: "NYC Socrata 43nn-pn8j"
